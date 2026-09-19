@@ -39,7 +39,7 @@ export function LoginPage() {
     } catch (error) {
       const message =
         error instanceof ApiError && error.code === 'USER_KEY_CONFLICT'
-          ? '다른 이름을 입력해 주세요.'
+          ? '잠시 후 다시 시도해 주세요.'
           : describeError(error)
       showToast('시작할 수 없어요', message, 'error')
     } finally {
