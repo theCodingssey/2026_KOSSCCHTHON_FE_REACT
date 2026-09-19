@@ -1,10 +1,11 @@
+import { ArrowRight } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { useToast } from '../app/toast'
 import { routes } from '../app/routes'
 import { Button } from '../components/Button'
-import { InkCard, Page, Spinner } from '../components/Page'
+import { Gap, InkCard, Page, Spinner } from '../components/Page'
 import { describeError } from '../data/apiClient'
 import { endpoints } from '../data/endpoints'
 import { iceLinkApi } from '../data/iceLinkApi'
@@ -12,8 +13,7 @@ import type { ParticipantTeamView, RoomEventType, ServerEvent } from '../data/ty
 import { useServerEvents } from '../hooks/useServerEvents'
 
 /**
- * Flutter `TeamNumberPage`. 새로고침에도 안전하도록 팀 정보를 서버에서 다시 읽는다.
- * 팀원 한 명이 질문 페이지로 넘어가 세션을 시작하면(TEAM_STARTED) 나머지 팀원 화면도 함께 넘어간다.
+ * 참가자: 배정된 팀 확인. 팀원 한 명이 세션을 시작하면(TEAM_STARTED) 모두 질문 화면으로 함께 이동.
  */
 export function TeamNumberPage() {
   const { code = '' } = useParams()
@@ -33,13 +33,12 @@ export function TeamNumberPage() {
           return
         }
         setTeam(result)
-        // 이미 세션이 시작된 팀이면 바로 질문 화면으로
         if (result.status !== 'NOT_STARTED') {
           navigate(routes.teamQuestion(result.teamId), { replace: true })
         }
       } catch (error) {
         if (!cancelled) {
-          showToast('팀 조회 실패', describeError(error), 'error')
+          showToast('팀을 불러오지 못했어요', describeError(error), 'error')
         }
       } finally {
         if (!cancelled) setLoading(false)
@@ -53,12 +52,10 @@ export function TeamNumberPage() {
   const handleEvent = useCallback(
     (type: RoomEventType, event: ServerEvent) => {
       if (!team) return
-      if (type === 'TEAM_STARTED') {
+      if (type === 'TEAM_STARTED' || type === 'ROOM_FINISHED') {
         navigate(routes.teamQuestion(team.teamId), { replace: true })
       } else if (type === 'TEAM_NAME_CHANGED') {
         setTeam((prev) => (prev ? { ...prev, name: String(event.payload.name ?? prev.name) } : prev))
-      } else if (type === 'ROOM_FINISHED') {
-        navigate(routes.teamQuestion(team.teamId), { replace: true })
       }
     },
     [team, navigate],
@@ -67,32 +64,39 @@ export function TeamNumberPage() {
   useServerEvents(team ? endpoints.teamEvents(team.teamId) : null, handleEvent)
 
   return (
-    <Page title="팀 번호 확인하기" centered>
-      <InkCard className="card--center">
-        <span className="subtitle" style={{ fontSize: 18, fontWeight: 800 }}>
-          당신의 팀 번호
-        </span>
-        <div className="gap-16" />
-        {loading ? <Spinner light /> : <span className="big-number">{team?.teamNo ?? '-'}</span>}
+    <Page title="팀 확인" centered>
+      <InkCard className="items-center text-center" style={{ padding: 32 }}>
+        <span className="text-[12px] font-semibold tracking-[0.12em] text-white/50">당신의 팀</span>
+        <Gap size={4} />
+        {loading ? (
+          <Spinner light size={30} />
+        ) : (
+          <div className="text-[96px] font-semibold leading-none tracking-[-0.04em] tabular">{team?.teamNo ?? '–'}</div>
+        )}
         {team && (
           <>
-            <div className="gap-18" />
-            <span className="eyebrow">{team.name}</span>
-            <div className="gap-8" />
-            <p className="subtitle text-center" style={{ fontSize: 15 }}>
-              {team.members.map((m) => (m.isMe ? `${m.nickname} (나)` : m.nickname)).join(' · ')}
-            </p>
+            <div className="mt-5 text-[17px] font-semibold tracking-[-0.02em]">{team.name}</div>
+            <div className="mt-4 flex flex-wrap justify-center gap-1.5">
+              {team.members.map((m) => (
+                <span
+                  key={m.participantId}
+                  className={`rounded-full px-3 py-1 text-[13px] font-medium ${
+                    m.isMe ? 'bg-white text-ink' : 'bg-white/10 text-white/80'
+                  }`}
+                >
+                  {m.nickname}
+                  {m.isMe && <span className="ml-1 text-[11px] text-muted">나</span>}
+                </span>
+              ))}
+            </div>
           </>
         )}
       </InkCard>
-      <div className="gap-28" />
-      <Button icon="arrow_forward" disabled={!team} onClick={() => team && navigate(routes.teamQuestion(team.teamId))}>
-        질문 페이지로 이동
+      <Gap size={7} />
+      <Button icon={ArrowRight} disabled={!team} onClick={() => team && navigate(routes.teamQuestion(team.teamId))}>
+        팀원 모두 모였어요
       </Button>
-      <div className="gap-12" />
-      <p className="status-line" style={{ fontSize: 13 }}>
-        팀원 중 한 명이 이동하면 모두 함께 질문 화면으로 넘어갑니다.
-      </p>
+      <p className="mt-3 text-center text-[12px] text-faint">팀원 중 한 명이 누르면 모두 함께 질문 화면으로 넘어가요.</p>
     </Page>
   )
 }

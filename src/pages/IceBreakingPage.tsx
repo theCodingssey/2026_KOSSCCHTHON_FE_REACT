@@ -1,3 +1,4 @@
+import { CheckCheck, Radio, RefreshCw, Users } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
@@ -5,8 +6,7 @@ import { useSession } from '../app/session'
 import { useToast } from '../app/toast'
 import { routes } from '../app/routes'
 import { Button } from '../components/Button'
-import { Card, InkCard, Page } from '../components/Page'
-import { Icon } from '../components/Icon'
+import { Badge, Card, Gap, IndexDot, InkCard, ListRow, Page } from '../components/Page'
 import { appConstants } from '../core/config'
 import { describeError } from '../data/apiClient'
 import { endpoints } from '../data/endpoints'
@@ -15,18 +15,22 @@ import type { RoomEventType, RoomTeamSummary, TeamStatus } from '../data/types'
 import { usePolling } from '../hooks/usePolling'
 import { useServerEvents } from '../hooks/useServerEvents'
 
-const TEAM_STATUS_LABEL: Record<TeamStatus, { text: string; tone: string }> = {
-  NOT_STARTED: { text: '모이는 중', tone: 'badge--warn' },
-  NAMING: { text: '팀명 정하기', tone: 'badge--info' },
-  QUESTIONING: { text: '질문 진행', tone: 'badge--ok' },
-  FINISHED: { text: '종료', tone: '' },
+const TEAM_STATUS_LABEL: Record<TeamStatus, { text: string; tone: 'ok' | 'warn' | 'info' | 'neutral' }> = {
+  NOT_STARTED: { text: '모이는 중', tone: 'warn' },
+  NAMING: { text: '팀명 정하기', tone: 'info' },
+  QUESTIONING: { text: '질문 진행', tone: 'ok' },
+  FINISHED: { text: '종료', tone: 'neutral' },
 }
 
-/**
- * Flutter `IceBreakingPage` + `IceBreakingController`.
- * 원본은 화면 전환만 했지만, 웹 테스트가 목적이므로 종료 버튼이 실제 `POST /host/rooms/{code}/finish` 를 호출하고
- * 팀 진행 상황을 3초 주기로 보여준다.
- */
+const CATEGORY_LABEL: Record<RoomTeamSummary['category'], string> = {
+  MOVIE: '영화',
+  GAME: '게임',
+  FOOD: '음식',
+  TRAVEL: '여행',
+  SPORTS: '스포츠',
+}
+
+/** 주최자: 팀 진행 상황 모니터링 → 종료 */
 export function IceBreakingPage() {
   const { code = '' } = useParams()
   const navigate = useNavigate()
@@ -44,7 +48,6 @@ export function IceBreakingPage() {
     }
   }, [code, navigate])
 
-  /** 주최자 SSE 스트림 (RT-01): 팀명 변경·상태 전이·질문 생성마다 팀 목록을 다시 읽는다 */
   const handleEvent = useCallback(
     (type: RoomEventType) => {
       if (type.startsWith('TEAM_') || type.startsWith('QUESTION_') || type === 'ROOM_FINISHED') {
@@ -55,7 +58,6 @@ export function IceBreakingPage() {
   )
   const { connected } = useServerEvents(code ? endpoints.hostRoomEvents(code) : null, handleEvent)
 
-  // 첫 진입 1회 + SSE 미연결 동안만 3초 폴링
   usePolling(loadRoom, appConstants.pollIntervalMs, !isFinishing && !connected)
 
   const finishIceBreaking = async () => {
@@ -65,68 +67,66 @@ export function IceBreakingPage() {
       void refresh().catch(() => undefined)
       navigate(routes.iceBreakingComplete(code), { replace: true })
     } catch (error) {
-      showToast('종료 실패', describeError(error, '아이스 브레이킹을 종료하지 못했습니다.'), 'error')
+      showToast('종료하지 못했어요', describeError(error, '아이스 브레이킹을 종료하지 못했습니다.'), 'error')
       setIsFinishing(false)
     }
   }
+
+  const activeCount = teams.filter((t) => t.status === 'QUESTIONING').length
 
   return (
     <Page
       title="아이스 브레이킹"
       footer={
-        <Button icon="done_all" loading={isFinishing} small onClick={finishIceBreaking}>
-          추가 질문 제시 후 아이스 브레이킹 마치기!
+        <Button icon={CheckCheck} loading={isFinishing} onClick={finishIceBreaking}>
+          마무리 질문 제시하고 종료하기
         </Button>
       }
     >
-      <div className="gap-16" />
-      <InkCard className="card--center">
-        <Icon name="groups_2" size={58} className="eyebrow" />
-        <div className="gap-18" />
-        <h2 className="headline headline--center">아이스 브레이킹 중...</h2>
-        <div className="gap-12" />
-        <p className="subtitle text-center" style={{ fontWeight: 600 }}>
-          {'팀원들이 서로 이야기할 수\n있도록 진행해주세요!'}
+      <InkCard className="items-center text-center" style={{ padding: 28 }}>
+        <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10">
+          <Users size={26} strokeWidth={1.75} />
+        </span>
+        <h2 className="display mt-5">아이스 브레이킹 중</h2>
+        <p className="mt-3 max-w-[30ch] text-[14px] leading-relaxed text-white/60">
+          팀원들이 서로 이야기할 수 있도록 진행해 주세요. 종료하면 모든 팀에 마무리 질문이 표시돼요.
         </p>
       </InkCard>
-      <div className="gap-22" />
+      <Gap size={5} />
 
-      <Card className="card--pad-16">
-        <div className="list__header">
-          <h3 className="title">팀 진행 상황</h3>
-          <span className={`badge ${connected ? 'badge--ok' : 'badge--warn'}`} title="실시간 동기화 상태">
+      <Card style={{ paddingTop: 16, paddingBottom: 12 }}>
+        <div className="flex items-center gap-2 px-0.5">
+          <h2 className="flex-1 text-[15px] font-semibold tracking-[-0.01em]">팀 진행 상황</h2>
+          <Badge tone={connected ? 'ok' : 'warn'} title="실시간 동기화 상태">
+            {connected ? <Radio size={11} /> : <RefreshCw size={11} />}
             {connected ? '실시간' : '폴링'}
-          </span>
-          <span className="muted" style={{ fontWeight: 900 }}>
-            {teams.length}팀
+          </Badge>
+          <span className="text-[13px] text-muted tabular">
+            <span className="font-semibold text-ink">{teams.length}</span>팀
+            {teams.length > 0 && <span className="text-faint"> · 진행 {activeCount}</span>}
           </span>
         </div>
-        <div className="gap-12" />
+        <Gap size={2} />
         {teams.length === 0 ? (
-          <p className="empty-hint">팀 정보를 불러오는 중...</p>
+          <p className="px-0.5 py-6 text-center text-[13px] text-muted">팀 정보를 불러오는 중…</p>
         ) : (
-          <div className="list">
+          <div className="hairline">
             {teams.map((team) => {
               const status = TEAM_STATUS_LABEL[team.status]
               return (
-                <div key={team.teamId} className="tile" style={{ alignItems: 'center' }}>
-                  <span className="tile__index" style={{ marginTop: 0 }}>
-                    {team.teamNo}
-                  </span>
-                  <span className="tile__text">
-                    {team.name}
-                    <span className="tile__meta">
-                      {team.memberCount}명 · {team.category} · 질문 {team.questionCount}개
-                    </span>
-                  </span>
-                  <span className={`badge ${status.tone}`}>{status.text}</span>
-                </div>
+                <ListRow
+                  key={team.teamId}
+                  leading={<IndexDot tone="ink">{team.teamNo}</IndexDot>}
+                  title={team.name}
+                  subtitle={`${team.memberCount}명 · ${CATEGORY_LABEL[team.category]} · 질문 ${team.questionCount}개`}
+                  trailing={<Badge tone={status.tone}>{status.text}</Badge>}
+                />
               )
             })}
           </div>
         )}
       </Card>
-      <div className="gap-20" />
+      <Gap size={6} />
     </Page>
   )
 }

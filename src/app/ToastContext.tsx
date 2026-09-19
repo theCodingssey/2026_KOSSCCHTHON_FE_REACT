@@ -11,6 +11,12 @@ interface Toast {
 
 const TOAST_DURATION_MS = 3_200
 
+const TONE_CLASS: Record<ToastTone, string> = {
+  info: 'bg-brand text-white',
+  error: 'bg-danger text-white',
+  success: 'bg-accent text-white',
+}
+
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([])
   const nextId = useRef(1)
@@ -28,11 +34,20 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="toast-stack" role="status" aria-live="polite">
+      <div
+        className="pointer-events-none fixed inset-x-4 top-4 z-50 flex flex-col items-center gap-2"
+        role="status"
+        aria-live="polite"
+      >
         {toasts.map((toast) => (
-          <div key={toast.id} className={`toast toast--${toast.tone}`}>
-            <div className="toast__title">{toast.title}</div>
-            {toast.message && <div className="toast__message">{toast.message}</div>}
+          <div
+            key={toast.id}
+            className={`w-full max-w-[480px] rounded-2xl px-4 py-3.5 shadow-lg animate-toast-in ${TONE_CLASS[toast.tone]}`}
+          >
+            <div className="text-[14px] font-semibold tracking-[-0.01em]">{toast.title}</div>
+            {toast.message && (
+              <div className="mt-0.5 text-[13px] leading-relaxed text-white/80 whitespace-pre-line">{toast.message}</div>
+            )}
           </div>
         ))}
       </div>

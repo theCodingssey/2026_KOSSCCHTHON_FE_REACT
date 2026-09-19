@@ -2,7 +2,7 @@ import { Navigate, Outlet, Route, Routes } from 'react-router-dom'
 
 import { useSession } from './app/session'
 import { routes } from './app/routes'
-import { Spinner } from './components/Page'
+import { Splash } from './components/Page'
 import { CreateRoomPage } from './pages/CreateRoomPage'
 import { HomePage } from './pages/HomePage'
 import { IceBreakingCompletePage } from './pages/IceBreakingCompletePage'
@@ -18,11 +18,7 @@ import { TeamQuestionPage } from './pages/TeamQuestionPage'
 function RequireSession() {
   const { session, isRestoring } = useSession()
   if (isRestoring) {
-    return (
-      <div className="page page--splash">
-        <Spinner />
-      </div>
-    )
+    return <Splash />
   }
   if (!session) {
     return <Navigate to={routes.login} replace />

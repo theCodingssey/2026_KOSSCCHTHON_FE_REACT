@@ -1,10 +1,11 @@
+import { Play, Radio, RefreshCw } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { useToast } from '../app/toast'
 import { routes } from '../app/routes'
 import { Button } from '../components/Button'
-import { Card, InkCard, Page } from '../components/Page'
+import { Badge, Card, Gap, IndexDot, InkCard, ListRow, Page } from '../components/Page'
 import { appConstants } from '../core/config'
 import { describeError } from '../data/apiClient'
 import { endpoints } from '../data/endpoints'
@@ -13,15 +14,15 @@ import type { HostParticipantResponse, ParticipantStatus, RoomEventType } from '
 import { usePolling } from '../hooks/usePolling'
 import { useServerEvents } from '../hooks/useServerEvents'
 
-const STATUS_LABEL: Record<ParticipantStatus, { text: string; tone: string }> = {
-  JOINED: { text: '설문 중', tone: 'badge--warn' },
-  SURVEY_DONE: { text: '설문 완료', tone: 'badge--ok' },
-  ASSIGNED: { text: '배정됨', tone: 'badge--info' },
-  LATE: { text: '늦참', tone: '' },
-  LEFT: { text: '나감', tone: '' },
+const STATUS_LABEL: Record<ParticipantStatus, { text: string; tone: 'ok' | 'warn' | 'info' | 'neutral' }> = {
+  JOINED: { text: '설문 중', tone: 'warn' },
+  SURVEY_DONE: { text: '설문 완료', tone: 'ok' },
+  ASSIGNED: { text: '배정됨', tone: 'info' },
+  LATE: { text: '늦참', tone: 'neutral' },
+  LEFT: { text: '나감', tone: 'neutral' },
 }
 
-/** Flutter `PeopleChecklist` + `PeopleChecklistController`. 3초 주기로 참가자 목록을 갱신한다. */
+/** 주최자: 참가자 명단 실시간 확인 → 팀 빌딩 시작 */
 export function PeopleChecklistPage() {
   const { code = '' } = useParams()
   const navigate = useNavigate()
@@ -37,7 +38,6 @@ export function PeopleChecklistPage() {
     setLoaded(true)
   }, [code])
 
-  /** 주최자 SSE 스트림 (RT-01): 참가 입장·설문 완료·나가기 이벤트마다 목록을 다시 읽는다 */
   const handleEvent = useCallback(
     (type: RoomEventType) => {
       if (type === 'PARTICIPANT_JOINED' || type === 'PARTICIPANT_LEFT' || type === 'PARTICIPANT_SURVEY_DONE') {
@@ -48,7 +48,6 @@ export function PeopleChecklistPage() {
   )
   const { connected } = useServerEvents(code ? endpoints.hostRoomEvents(code) : null, handleEvent)
 
-  // 첫 진입 1회 + SSE 미연결 동안만 3초 폴링
   usePolling(loadParticipants, appConstants.pollIntervalMs, !isStarting && !connected)
 
   const surveyDoneCount = participants.filter((p) => p.status === 'SURVEY_DONE').length
@@ -59,65 +58,64 @@ export function PeopleChecklistPage() {
       await iceLinkApi.startTeamBuilding(code)
       navigate(routes.iceBreaking(code))
     } catch (error) {
-      showToast('팀 빌딩 실패', describeError(error, '참가자 설문 완료 상태를 확인해주세요.'), 'error')
+      showToast('팀 빌딩을 시작하지 못했어요', describeError(error, '참가자 설문 완료 상태를 확인해 주세요.'), 'error')
       setIsStarting(false)
     }
   }
 
   return (
     <Page
-      title="참가자 명단 확인하기"
+      title="참가자 명단"
       footer={
-        <Button icon="play_arrow" loading={isStarting} onClick={startIceBreaking}>
-          {isStarting ? '시작 중...' : '시작하기!'}
+        <Button icon={Play} loading={isStarting} onClick={startIceBreaking} disabled={surveyDoneCount < 2}>
+          {isStarting ? '팀을 나누는 중…' : '팀 빌딩 시작하기'}
         </Button>
       }
     >
-      <InkCard className="card--pad-20" >
-        <span className="eyebrow">참가용 핀</span>
-        <div className="gap-10" />
-        <span className="pin-text">{code}</span>
+      <InkCard className="gap-2" style={{ padding: 24 }}>
+        <span className="text-[12px] font-semibold tracking-[0.1em] text-white/60">참가용 핀</span>
+        <div className="text-[44px] font-semibold leading-none tracking-[0.06em] tabular">{code}</div>
+        <p className="mt-2 text-[13px] text-white/60">참가자가 핀을 입력하고 설문을 마치면 여기에 표시돼요.</p>
       </InkCard>
-      <div className="gap-22" />
+      <Gap size={5} />
 
-      <Card className="card--pad-16">
-        <div className="list__header">
-          <h2 className="title">참가자 명단</h2>
-          <span className={`badge ${connected ? 'badge--ok' : 'badge--warn'}`} title="실시간 동기화 상태">
+      <Card style={{ paddingTop: 16, paddingBottom: 12 }}>
+        <div className="flex items-center gap-2 px-0.5">
+          <h2 className="flex-1 text-[15px] font-semibold tracking-[-0.01em]">참가자</h2>
+          <Badge tone={connected ? 'ok' : 'warn'} title="실시간 동기화 상태">
+            {connected ? <Radio size={11} /> : <RefreshCw size={11} />}
             {connected ? '실시간' : '폴링'}
-          </span>
-          <span className="muted" style={{ fontWeight: 900 }}>
-            {participants.length}명
-            {participants.length > 0 && (
-              <span className="caption" style={{ marginLeft: 6 }}>
-                (설문 완료 {surveyDoneCount})
-              </span>
-            )}
+          </Badge>
+          <span className="text-[13px] text-muted tabular">
+            <span className="font-semibold text-ink">{participants.length}</span>명
+            {participants.length > 0 && <span className="text-faint"> · 설문 완료 {surveyDoneCount}</span>}
           </span>
         </div>
-        <div className="gap-12" />
+        <Gap size={2} />
         {!loaded ? (
-          <p className="empty-hint">참가자 목록을 불러오는 중...</p>
+          <p className="px-0.5 py-6 text-center text-[13px] text-muted">참가자 목록을 불러오는 중…</p>
         ) : participants.length === 0 ? (
-          <p className="empty-hint">아직 참가자가 없습니다. 핀을 공유해 주세요.</p>
+          <p className="px-0.5 py-6 text-center text-[13px] text-muted">아직 참가자가 없어요. 핀을 공유해 주세요.</p>
         ) : (
-          <div className="list">
+          <div className="hairline">
             {participants.map((p, index) => {
               const status = STATUS_LABEL[p.status]
               return (
-                <div key={p.participantId} className="tile" style={{ alignItems: 'center' }}>
-                  <span className="tile__index tile__index--soft" style={{ marginTop: 0 }}>
-                    {index + 1}
-                  </span>
-                  <span className="tile__text">{p.nickname}</span>
-                  <span className={`badge ${status.tone}`}>{status.text}</span>
-                </div>
+                <ListRow
+                  key={p.participantId}
+                  leading={<IndexDot>{index + 1}</IndexDot>}
+                  title={p.nickname}
+                  trailing={<Badge tone={status.tone}>{status.text}</Badge>}
+                />
               )
             })}
           </div>
         )}
       </Card>
-      <div className="gap-20" />
+      {surveyDoneCount < 2 && loaded && (
+        <p className="mt-3 text-center text-[12px] text-faint">설문을 마친 참가자가 2명 이상이면 시작할 수 있어요.</p>
+      )}
+      <Gap size={6} />
     </Page>
   )
 }

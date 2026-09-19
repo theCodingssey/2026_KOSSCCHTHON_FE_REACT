@@ -19,7 +19,7 @@ export const apiConfig = {
 } as const
 
 export const appConstants = {
-  appName: 'IceLink',
+  appName: 'ICE LINK',
   /** Flutter 컨트롤러들의 3초 폴링 주기 */
   pollIntervalMs: 3_000,
 } as const
