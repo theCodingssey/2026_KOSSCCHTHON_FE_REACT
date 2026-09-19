@@ -74,7 +74,7 @@ export function JoinRoomPage() {
     } catch (error) {
       const hint =
         error instanceof ApiError && error.code === 'ALREADY_IN_ANOTHER_ROOM'
-          ? `이미 다른 방(${String(error.problem?.activeRoomCode ?? '')})에 참가 중입니다. 홈의 디버그 버튼으로 먼저 나가 주세요.`
+          ? `이미 다른 방(${String(error.problem?.activeRoomCode ?? '')})에 참가 중입니다. 진행 중인 방으로 이동하거나 방이 끝난 뒤 다시 시도해주세요.`
           : describeError(error, '방 코드와 서버 상태를 확인해주세요.')
       showToast('방 참가 실패', hint, 'error')
     } finally {

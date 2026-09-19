@@ -1,28 +1,43 @@
-import { useState } from 'react'
+import { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { useSession } from '../app/session'
-import { useToast } from '../app/toast'
 import { routes } from '../app/routes'
 import iceLinkIcon from '../assets/icelink-icon.png'
 import { Button } from '../components/Button'
 import { Page } from '../components/Page'
 import { appConstants } from '../core/config'
-import { describeError } from '../data/apiClient'
-import { iceLinkApi } from '../data/iceLinkApi'
+import { usePolling } from '../hooks/usePolling'
 import type { ActiveRoomResponse } from '../data/types'
+
+const ACTIVE_ROOM_REFRESH_MS = 3000
+
+function isResumableRoom(room: ActiveRoomResponse): boolean {
+  if (room.status === 'FINISHED') {
+    return false
+  }
+  return room.role !== 'PARTICIPANT' || room.participantStatus !== 'LEFT'
+}
 
 /** Flutter `HomePage` + `HomeController` */
 export function HomePage() {
-  const { session, refresh, logout } = useSession()
-  const { showToast } = useToast()
+  const { session, refresh } = useSession()
   const navigate = useNavigate()
-  const [isClearing, setIsClearing] = useState(false)
 
   const activeRoom = session?.activeRoom ?? null
+  const resumableRoom = activeRoom && isResumableRoom(activeRoom) ? activeRoom : null
+
+  const refreshActiveRoom = useCallback(async () => {
+    await refresh()
+  }, [refresh])
+
+  usePolling(refreshActiveRoom, ACTIVE_ROOM_REFRESH_MS, Boolean(session))
 
   /** 진행 중인 방이 있으면 역할·상태에 맞는 화면으로 바로 이동 (앱 복원 시나리오) */
   const resumeActiveRoom = (room: ActiveRoomResponse) => {
+    if (!isResumableRoom(room)) {
+      return
+    }
     if (room.role === 'HOST') {
       navigate(room.status === 'WAITING' ? routes.peopleChecklist(room.code) : routes.iceBreaking(room.code))
       return
@@ -33,31 +48,6 @@ export function HomePage() {
       navigate(routes.teamBuildingWait(room.code))
     } else {
       navigate(routes.joinRoom)
-    }
-  }
-
-  /** Flutter `clearActiveRoomForDebug`: 호스트면 방 종료, 참가자면 나가기 */
-  const clearActiveRoomForDebug = async () => {
-    setIsClearing(true)
-    try {
-      const me = await iceLinkApi.fetchMe()
-      const room = me.activeRoom
-      if (!room) {
-        showToast('진행 중인 방 없음', '종료할 방이 없습니다.')
-        return
-      }
-      if (room.role === 'HOST') {
-        await iceLinkApi.finishRoom(room.code)
-        showToast('방 종료 완료', `${room.code} 방을 종료했습니다.`, 'success')
-      } else {
-        await iceLinkApi.leaveRoom(room.code)
-        showToast('방 나가기 완료', `${room.code} 방에서 나갔습니다.`, 'success')
-      }
-      await refresh()
-    } catch (error) {
-      showToast('디버그 요청 실패', describeError(error, '진행 중인 방을 종료하지 못했습니다.'), 'error')
-    } finally {
-      setIsClearing(false)
     }
   }
 
@@ -76,10 +66,10 @@ export function HomePage() {
       )}
       <div className="gap-80" />
 
-      {activeRoom && (
+      {resumableRoom && (
         <>
-          <Button icon="play_circle" variant="outlined" onClick={() => resumeActiveRoom(activeRoom)}>
-            진행 중인 방으로 이동 ({activeRoom.code})
+          <Button icon="play_circle" variant="outlined" onClick={() => resumeActiveRoom(resumableRoom)}>
+            진행 중인 방으로 이동 ({resumableRoom.code})
           </Button>
           <div className="gap-12" />
         </>
@@ -91,20 +81,6 @@ export function HomePage() {
       <div className="gap-12" />
       <Button icon="add_circle" variant="outlined" onClick={() => navigate(routes.createRoom)}>
         방 생성하기
-      </Button>
-      <div className="gap-12" />
-      <Button icon="delete" variant="text" loading={isClearing} onClick={clearActiveRoomForDebug}>
-        {isClearing ? '진행 중인 방 정리 중...' : '디버그: 진행 중인 방 종료'}
-      </Button>
-      <Button
-        icon="logout"
-        variant="text"
-        onClick={() => {
-          logout()
-          navigate(routes.login, { replace: true })
-        }}
-      >
-        디버그: 로그아웃 (다른 이름으로 시작)
       </Button>
     </Page>
   )
