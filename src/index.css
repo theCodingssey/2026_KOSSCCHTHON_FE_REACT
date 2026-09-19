@@ -1,0 +1,791 @@
+/* Flutter AppTheme 대응 토큰 */
+:root {
+  --ink: #17202a;
+  --primary: #2f66c7;
+  --primary-dark: #244f9c;
+  --teal: #00a6a6;
+  --ice: #d8f1f7;
+  --bg: #f4f8fb;
+  --surface: #ffffff;
+  --surface-warm: #fffcf7;
+  --border: #d0d5dd;
+  --muted: #667085;
+  --disabled: #d0d5dd;
+  --danger: #d92d20;
+  --answer-neutral: #b8bdc7;
+  --answer-negative: #7a4a15;
+
+  --radius-lg: 28px;
+  --radius-md: 22px;
+  --radius-sm: 18px;
+  --radius-xs: 16px;
+
+  --font: 'Roboto', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', system-ui, sans-serif;
+
+  color-scheme: light;
+  font-family: var(--font);
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  text-size-adjust: 100%;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+/* ---- 페이지 골격 (Scaffold/SafeArea/ConstrainedBox) ---- */
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.page--splash {
+  align-items: center;
+  justify-content: center;
+}
+
+.page__body {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 20px 20px 24px;
+}
+
+.page__body--centered {
+  align-items: center;
+}
+
+.page__content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.page__footer {
+  display: flex;
+  justify-content: center;
+  padding: 0 20px 20px;
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(to bottom, rgba(244, 248, 251, 0), var(--bg) 40%);
+}
+
+.appbar {
+  height: 56px;
+  display: grid;
+  grid-template-columns: 48px 1fr 48px;
+  align-items: center;
+  padding: 0 4px;
+}
+
+.appbar__title {
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.appbar__back {
+  width: 48px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--ink);
+}
+
+.appbar__back:hover {
+  background: rgba(23, 32, 42, 0.06);
+}
+
+/* ---- 타이포 ---- */
+.headline {
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1.08;
+  letter-spacing: 0;
+  white-space: pre-line;
+}
+
+.headline--center {
+  text-align: center;
+}
+
+.headline--xl {
+  font-size: 40px;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.subtitle {
+  color: var(--muted);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.35;
+  white-space: pre-line;
+}
+
+.caption {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.text-center {
+  text-align: center;
+}
+
+.gap-4 { height: 4px; }
+.gap-8 { height: 8px; }
+.gap-10 { height: 10px; }
+.gap-12 { height: 12px; }
+.gap-16 { height: 16px; }
+.gap-18 { height: 18px; }
+.gap-20 { height: 20px; }
+.gap-22 { height: 22px; }
+.gap-24 { height: 24px; }
+.gap-28 { height: 28px; }
+.gap-50 { height: 50px; }
+.gap-56 { height: 56px; }
+.gap-80 { height: 80px; }
+.spacer { flex: 1; min-height: 24px; }
+
+/* ---- 입력 (InputDecorationTheme) ---- */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field__label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+  padding-left: 4px;
+}
+
+.field__control {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+}
+
+.field__control > .icon {
+  position: absolute;
+  left: 16px;
+  top: 18px;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 18px 18px 18px 18px;
+  font-size: 16px;
+  font-weight: 600;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.field__control > .icon + .input,
+.field__control > .icon + .textarea {
+  padding-left: 50px;
+}
+
+.input:focus,
+.textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: #98a2b3;
+  font-weight: 500;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 108px;
+  line-height: 1.45;
+}
+
+/* ---- 버튼 (FilledButton / OutlinedButton / TextButton) ---- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 58px;
+  padding: 0 20px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  font-size: 17px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: background-color 0.15s, transform 0.05s, opacity 0.15s;
+  user-select: none;
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+}
+
+.btn--filled {
+  background: var(--primary);
+  color: #fff;
+}
+
+.btn--filled:hover:not(:disabled) {
+  background: var(--primary-dark);
+}
+
+.btn--filled:disabled {
+  background: var(--disabled);
+  color: #fff;
+}
+
+.btn--outlined {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--border);
+}
+
+.btn--outlined:hover:not(:disabled) {
+  background: #f8fafc;
+}
+
+.btn--outlined:disabled {
+  color: var(--muted);
+}
+
+.btn--text {
+  min-height: 44px;
+  background: transparent;
+  color: var(--primary);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.btn--text:hover:not(:disabled) {
+  background: rgba(47, 102, 199, 0.08);
+}
+
+.btn--text:disabled {
+  color: var(--muted);
+}
+
+.btn--sm {
+  font-size: 15px;
+}
+
+.btn--danger {
+  color: var(--danger);
+}
+
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  flex: none;
+}
+
+.icon-btn:hover {
+  background: rgba(23, 32, 42, 0.06);
+}
+
+/* ---- 카드 ---- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+}
+
+.card--ink {
+  background: var(--ink);
+  color: #fff;
+  border: 0;
+  border-radius: var(--radius-lg);
+  padding: 28px;
+}
+
+.card--ink .eyebrow {
+  color: var(--ice);
+  font-weight: 900;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+}
+
+.card--ink .headline {
+  color: #fff;
+}
+
+.card--ink .subtitle {
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 700;
+}
+
+.card--center {
+  align-items: center;
+  text-align: center;
+}
+
+.card--pad-20 {
+  padding: 20px;
+}
+
+.card--pad-16 {
+  padding: 16px;
+}
+
+.card--pad-24 {
+  padding: 24px;
+}
+
+.pin-text {
+  font-size: 42px;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.big-number {
+  font-size: 82px;
+  font-weight: 900;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- 리스트 항목 ---- */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.list__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.list__header .title {
+  flex: 1;
+}
+
+.tile {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-xs);
+  background: var(--bg);
+}
+
+.tile__index {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  margin-top: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 900;
+}
+
+.tile__index--soft {
+  background: var(--ice);
+  color: var(--primary);
+}
+
+.tile__text {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.tile__meta {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  background: #eef2f6;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.badge--ok {
+  background: #e3f6ec;
+  color: #1a7f4b;
+}
+
+.badge--info {
+  background: var(--ice);
+  color: var(--primary);
+}
+
+.badge--warn {
+  background: #fdf0d5;
+  color: #9a5b00;
+}
+
+.empty-hint {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 4px;
+}
+
+/* ---- 설문 (5점 척도 원형 + 취미 칩) ---- */
+.scale {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.scale__dot {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2.5px solid currentColor;
+  background: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: border-width 0.16s, background-color 0.16s;
+  position: relative;
+}
+
+.scale__dot::before {
+  /* 터치 영역 확대 (InkResponse radius 26) */
+  content: '';
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+}
+
+.scale__dot--selected {
+  border-width: 6px;
+  background: currentColor;
+}
+
+.scale__dot--selected .icon {
+  color: #fff;
+}
+
+.scale__dot--positive { color: var(--primary); }
+.scale__dot--neutral { color: var(--answer-neutral); }
+.scale__dot--negative { color: var(--answer-negative); }
+
+.scale__labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px 9px 12px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 800;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.chip .icon {
+  color: var(--primary);
+}
+
+.chip--selected {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.chip--selected .icon {
+  color: #fff;
+}
+
+/* ---- 로딩 ---- */
+.spinner {
+  display: inline-block;
+  border-radius: 50%;
+  border: 4px solid rgba(47, 102, 199, 0.18);
+  border-top-color: var(--primary);
+  animation: spin 0.9s linear infinite;
+}
+
+.spinner--light {
+  border-color: rgba(216, 241, 247, 0.25);
+  border-top-color: var(--ice);
+}
+
+.spinner--sm {
+  border-width: 2.5px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---- 토스트 (Get.snackbar) ---- */
+.toast-stack {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.toast {
+  width: 100%;
+  max-width: 480px;
+  background: var(--ink);
+  color: #fff;
+  border-radius: 16px;
+  padding: 14px 18px;
+  box-shadow: 0 10px 30px rgba(23, 32, 42, 0.25);
+  animation: toast-in 0.2s ease-out;
+}
+
+.toast--error {
+  background: #7a1f1a;
+}
+
+.toast--success {
+  background: #14532d;
+}
+
+.toast__title {
+  font-weight: 900;
+  font-size: 15px;
+}
+
+.toast__message {
+  margin-top: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  white-space: pre-line;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---- 홈 ---- */
+.home-icon {
+  display: block;
+  margin: 0 auto 30px;
+  width: 250px;
+  height: 250px;
+  object-fit: contain;
+}
+
+@media (max-height: 640px) {
+  .home-icon {
+    width: 190px;
+    height: 190px;
+  }
+}
+
+.app-name {
+  text-align: center;
+  font-size: 46px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+/* ---- 질문 화면 ---- */
+.question-text {
+  color: #fff;
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+}
+
+.transcript-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.transcript-header .icon {
+  color: var(--primary);
+}
+
+.transcript-text {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.transcript-text--empty {
+  color: var(--muted);
+}
+
+.error-text {
+  color: var(--danger);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.inline-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.inline-actions > .btn {
+  flex: 1;
+}
+
+.keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.keyword {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--ice);
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.team-name-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.team-name-row .input {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.team-name-row .btn {
+  width: auto;
+  min-height: 0;
+  padding: 0 16px;
+  font-size: 15px;
+}
+
+.status-line {
+  text-align: center;
+  color: var(--muted);
+  font-weight: 800;
+}
