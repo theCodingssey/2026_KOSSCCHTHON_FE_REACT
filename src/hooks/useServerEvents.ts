@@ -54,7 +54,8 @@ export function useServerEvents(path: string | null, onEvent: ServerEventHandler
     let retryTimer: number | null = null
     let disposed = false
 
-    const url = `${apiConfig.baseUrl}${path}${path.includes('?') ? '&' : '?'}userKey=${encodeURIComponent(userKey)}`
+    // 일반 REST 와 다른 호스트(연결 풀)를 써서 SSE 가 브라우저의 호스트당 6연결 한도를 잡아먹지 않게 한다 (config 참고)
+    const url = `${apiConfig.sseBaseUrl}${path}${path.includes('?') ? '&' : '?'}userKey=${encodeURIComponent(userKey)}`
 
     const connect = () => {
       if (disposed) return
