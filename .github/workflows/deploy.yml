@@ -1,0 +1,93 @@
+# main 에 푸시되면: 타입 검사·린트 → Docker Hub 에 이미지 푸시 → 서버에 SSH 로 접속해 pull & 재시작
+#
+# 필요한 GitHub Secrets (백엔드 저장소와 같은 값):
+#   DOCKERHUB_USERNAME, DOCKERHUB_TOKEN, SSH_HOST, SSH_PORT, SSH_USER, SSH_PASSWORD
+name: Deploy frontend
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-frontend
+  cancel-in-progress: false
+
+env:
+  IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/icelink-frontend
+
+jobs:
+  check:
+    name: Type-check & lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npx tsc -b
+      - run: npm run lint
+
+  build-push:
+    name: Build & push image
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: meta
+        name: Image tag
+        run: echo "tag=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          build-args: |
+            VITE_API_BASE_URL=/api/v1
+            VITE_SSE_BASE_URL=
+          tags: |
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to server
+    needs: build-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare SSH (password auth)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq sshpass > /dev/null
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+      - name: Pull & restart frontend
+        env:
+          SSHPASS: ${{ secrets.SSH_PASSWORD }}
+        run: |
+          sshpass -e ssh -p "${{ secrets.SSH_PORT }}" \
+              -o StrictHostKeyChecking=yes -o PreferredAuthentications=password -o PubkeyAuthentication=no -o ConnectTimeout=20 \
+              "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" bash -s <<'EOF'
+            set -euo pipefail
+            IMAGE="${{ env.IMAGE }}:latest"
+            echo "==> pull $IMAGE"
+            docker pull "$IMAGE"
+            docker rm -f icelink-frontend >/dev/null 2>&1 || true
+            # nginx(bridge) 가 호스트의 8080(백엔드) 으로 프록시할 수 있게 host.docker.internal 등록
+            docker run -d --name icelink-frontend --restart unless-stopped \
+              -p 80:80 \
+              --add-host host.docker.internal:host-gateway \
+              --log-opt max-size=20m --log-opt max-file=5 \
+              "$IMAGE" >/dev/null
+            sleep 3
+            curl -fsS http://localhost/healthz && echo " frontend UP"
+            docker image prune -f >/dev/null
+            docker ps --filter name=icelink-frontend --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'
+          EOF

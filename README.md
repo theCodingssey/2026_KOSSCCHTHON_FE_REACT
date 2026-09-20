@@ -23,6 +23,17 @@ npm run build        # tsc -b && vite build → dist/
 npm run lint
 ```
 
+## 배포 (Docker + GitHub Actions)
+
+`main` 에 푸시하면 `.github/workflows/deploy.yml` 이 타입 검사·린트 → Docker 이미지 빌드(`VITE_API_BASE_URL=/api/v1`) → Docker Hub 푸시 → 서버 SSH 로 `docker pull` 후 `icelink-frontend` 컨테이너를 교체(`docker run`)합니다. compose 는 쓰지 않습니다.
+이미지는 nginx 가 정적 파일을 내주고 `/api/` 를 같은 서버의 백엔드(8080)로 프록시합니다 (`Dockerfile`, `deploy/nginx.conf`).
+서버 설정·시크릿·수동 배포 스크립트(`deploy.sh`)는 백엔드 저장소의 `docs/05-docker-deploy.md` 를 따릅니다.
+
+```bash
+docker build -t icelink-frontend:local .          # 로컬 확인용
+docker run --rm -p 8080:80 icelink-frontend:local  # /api 는 host.docker.internal:8080 으로 프록시
+```
+
 ## 화면 흐름 (Flutter 화면 → 경로)
 
 | Flutter 화면 | React 경로 | 설명 |

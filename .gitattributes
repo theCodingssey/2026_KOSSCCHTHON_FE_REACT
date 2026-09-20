@@ -1,0 +1,6 @@
+# 서버(Linux)·리눅스 러너에서 실행되는 파일은 LF 고정
+* text=auto
+Dockerfile      text eol=lf
+*.conf          text eol=lf
+*.yml           text eol=lf
+*.sh            text eol=lf
